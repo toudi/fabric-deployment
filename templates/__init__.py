@@ -25,6 +25,7 @@ class BaseDeployment(object):
         self.scm.refresh_repo()
         (payload, delete) = self.scm.prepare_payload()
         self.emit_signal("pre-send-payload")
+        self.emit_signal("finish")
 
     def get_config_value(self, value, default=None, local=True):
         key_tree = value.split('/')

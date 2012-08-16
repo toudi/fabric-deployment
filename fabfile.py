@@ -6,11 +6,6 @@ for path in ('', '../../'):
     if not getcwd() + '/' + path in sys.path:
         sys.path.insert(1, getcwd() + '/' + path)
 
-try:
-    from aliases import *
-except ImportError:
-    pass
-
 def run(command, *args, **kwargs):
     try:
         command = command.split('.')
@@ -47,6 +42,11 @@ def deploy(branch=None, fast=False):
 
 
 if __name__ == 'fabfile':
+    try:
+        from aliases import *
+    except ImportError:
+        pass
+
     """
     Kind of a hack. deployment initializes fabric's env. Without this,
     fabric wouldn't be informed about any roledefs (this section is parsed

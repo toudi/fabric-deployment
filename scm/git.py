@@ -3,6 +3,7 @@ from fabric.operations import local, run
 from fabric.context_managers import lcd, settings
 from os.path import exists
 from hashlib import md5
+from commands import scp
 
 
 class Backend:
@@ -48,10 +49,18 @@ class Backend:
                     local("tar -cf ../%(payload)s -T ../payload" % {
                         'payload': self.payload_file
                     })
+                    
+            self.deploy.emit_signal("pre-copy")
+            scp(self.payload_file, "/tmp")
+            self.deploy.emit_signal("pre-extract")
+            self.deploy.emit_signal("post-extract")
 
         return (self.payload_file, self.removed_files_list)
 
     def cleanup(self):
-        local("rm -f %(payload)s %(remove)s" % (
-            self.payload_file, self.removed_files_list)
-        )
+        with lcd("repo"):
+            local("git checkout master")
+        local("rm -f payload %(payload)s %(remove)s" % {
+            'payload': self.payload_file,
+            'remove': self.removed_files_list
+        })
