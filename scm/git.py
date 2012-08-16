@@ -1,7 +1,8 @@
 # -*- coding: utf-8 *-*
-from fabric.operations import local
-from fabric.context_managers import lcd
+from fabric.operations import local, run
+from fabric.context_managers import lcd, settings
 from os.path import exists
+from hashlib import md5
 
 
 class Backend:
@@ -24,8 +25,33 @@ class Backend:
     (payload.tar.gz, files to remove)
     """
     def prepare_payload(self):
-        pass
+        #We need to ensure, that fabric won't exit if the .last-deployment
+        #file is not on the server. This basically means, that there was no
+        #deploy yet and we need to make a fresh one.
+        self.removed_files_list = None
+        with lcd("repo"):
+            head = local("git checkout %(branch)s && git rev-parse HEAD" % {
+                'branch': self.branch,
+            }, capture=True)
+            self.payload_file = 'payload-%s.tar.gz' % head
+        with settings(warn_only=True):
+            sha1 = run("cat %(project)s/.last-deployment" % {
+                'project': self.deploy.project_path
+            })
+            if sha1.failed:
+                #there was no last deployment info -> we need to deploy a full
+                #tree of the code.
+                with lcd("repo"):
+                    local("git checkout %(branch)s && git ls-files > ../payload" % {
+                        'branch': self.branch
+                    })
+                    local("tar -cf ../%(payload)s -T ../payload" % {
+                        'payload': self.payload_file
+                    })
 
+        return (self.payload_file, self.removed_files_list)
 
     def cleanup(self):
-        local("rm -f payload.tar.gz files-to-remove")
+        local("rm -f %(payload)s %(remove)s" % (
+            self.payload_file, self.removed_files_list)
+        )

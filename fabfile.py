@@ -1,3 +1,4 @@
+from fabric.api import env
 import logging
 import sys
 from os import getcwd
@@ -52,4 +53,4 @@ if __name__ == 'fabfile':
     before execution of functions)
     """
     from config import deployment
-    deploy = deployment()
+    deployment()

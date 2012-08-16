@@ -23,7 +23,8 @@ class BaseDeployment(object):
 
     def run(self):
         self.scm.refresh_repo()
-        (update, delete) = self.scm.prepare_payload()
+        (payload, delete) = self.scm.prepare_payload()
+        self.emit_signal("pre-send-payload")
 
     def get_config_value(self, value, default=None, local=True):
         key_tree = value.split('/')
@@ -44,7 +45,7 @@ class BaseDeployment(object):
             self.__signal_handlers[signal] = [handler]
 
     def emit_signal(self, signal, *args, **kwargs):
-        for handler in self.__signal_handlers[signal]:
+        for handler in self.__signal_handlers.get(signal, []):
             handler(*args, **kwargs)
 
     @property
@@ -57,6 +58,14 @@ class BaseDeployment(object):
             self.__scm = getattr(_imp, 'Backend')(self, scm_url, scm_config)
         return self.__scm
 
+    @property
+    def project_path(self):
+        return self.get_config_value('project/destpath') % {
+            'host': self.host()
+        }
+
+    def host(self):
+        pass
 
 class PythonDeployment(BaseDeployment):
     def init(self):
