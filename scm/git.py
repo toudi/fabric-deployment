@@ -52,11 +52,12 @@ class Backend:
                         })
                 else:
                     if self.head != sha1:
+                        self.removed_files_list = "remove-files-%s" % self.head
                     #we prepare the diff
                         local("git diff --name-status --no-renames %s |\
-                                   egrep '^(A|M)' | cut -f 2 > ../payload" % sha1)
+ egrep '^(A|M)' | cut -f 2 > ../payload" % sha1)
                         local("git diff --name-status --no-renames %s |\
-                                   egrep '^D' | cut -f 2 > ../remove-files" % sha1)
+ egrep '^D' | cut -f 2 > ../%s" % (sha1, self.removed_files_list))
                     else:
                         self.payload_file = None
                 #just in case enything goes berserk in the future
@@ -64,22 +65,23 @@ class Backend:
                 #could resume sanely.
                 local("git checkout master")
                 
-            if self.payload_file:
-                local("tar -czf ../%(payload)s -T ../payload" % {
-                    'payload': self.payload_file
-                })
+                if self.payload_file:
+                    local("tar -czf ../%(payload)s -T ../payload" % {
+                        'payload': self.payload_file
+                    })
 
                             
         return (self.payload_file, self.removed_files_list)
 
     def finish(self):
+        #do the stuff only if there was something changed.
         if self.payload_file:
             local("rm -f payload %(payload)s %(remove)s" % {
                 'payload': self.payload_file,
                 'remove': self.removed_files_list
             })
             run("rm -f /tmp/" + self.payload_file)
-        run("echo %(head)s > %(project)s/.last-deployment" % {
-            "head": self.head,
-            "project": self.deploy.project_path
-        })
+            run("echo %(head)s > %(project)s/.last-deployment" % {
+                "head": self.head,
+                "project": self.deploy.project_path
+            })

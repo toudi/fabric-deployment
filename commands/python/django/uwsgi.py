@@ -11,6 +11,8 @@ from fabric.operations import run
 import logging
 
 def is_running(deployment):
+    if not exists("%s/uwsgi.pid" % deployment.get_config_value('uwsgi/workdir')):
+        return False
     with settings(warn_only=True):
         uwsgi_running = run("kill -s 0 `cat %(uwsgi)s/uwsgi.pid`" % {
             "uwsgi": deployment.get_config_value('uwsgi/workdir')
@@ -21,16 +23,23 @@ def is_running(deployment):
 def restart(deployment):
     #we need to check whether uwsgi is started in emperor mode or not.
     emperor = deployment.get_config_value('uwsgi/emperor', False)
+    vassals_dir = deployment.get_config_value('uwsgi/vassals_dir')
     #then, check if the master instance of uwsgi exists. If not, there's no
     #need to restart, as it will pick up vassal automatically.
         
     if emperor:
-        if not is_running(deployment):
-            #start uwsgi, as it will pick up the vassal from vassal's dir.
-            start(deployment)
-            return
-        
-        run("touch %s" % deployment.vassal[0])
+        with cd(vassals_dir):
+            if not is_running(deployment):
+                #start uwsgi, as it will pick up the vassal from vassal's dir.
+                start(deployment)
+                return
+            if exists(deployment.vassal[0]):
+                run("touch %s" % deployment.vassal[0])
+            else:
+                scp(
+                    deployment.get_config_value('uwsgi/launcher'),
+                    vassals_dir + "/" + deployment.vassal[0]
+                )
     else:
         stop(deployment)
         start(deployment)
@@ -58,10 +67,10 @@ def start(deployment):
         if not is_running(deployment):
         #let's start main uwsgi instance.
             virtualenv(
-                deployment.get_config_value('project/virtualenv'),
+                deployment.get_config_value('virtualenv/path'),
                 "LANG=pl_PL.UTF-8 LC_ALL=pl_PL.UTF-8 uwsgi \
-                --daemonize %(log)s --pidfile %(pid)s --socket %(sock)s \
-                --emperor %(vassals)s" % {
+ --daemonize %(log)s --pidfile %(pid)s --fastrouter %(sock)s \
+ --fastrouter-subscription-server 127.0.0.1:3032 --emperor %(vassals)s" % {
                     "log": uwsgi_dir + "/uwsgi.log",
                     "pid": uwsgi_dir + "/uwsgi.pid",
                     "vassals": vassals_dir,
@@ -73,9 +82,9 @@ def start(deployment):
     else:
         #not emperor mode - start uwsgi process.
         virtualenv(
-            deployment.get_config_value('project/virtualenv'),
+            deployment.get_config_value('virtualenv/path'),
             "LANG=pl_PL.UTF-8 LC_ALL=pl_PL.UTF-8 uwsgi \
-            --daemonize %(log)s --pidfile %(pid)s --socket %(sock)s %(def)s" % {
+ --daemonize %(log)s --pidfile %(pid)s --socket %(sock)s %(def)s" % {
                 "log": project_path + "/uwsgi.log",
                 "pid": project_path + "/uwsgi.pid",
                 "def": vassal[1],

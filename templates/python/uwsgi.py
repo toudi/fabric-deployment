@@ -1,12 +1,12 @@
-# -*- coding: utf-8 *-*
 from templates import BaseDeployment
-from commands.python import remove_pyc_files
 from commands.python.django.uwsgi import restart as restart_uwsgi
+from fabric.context_managers import cd
+from fabric.operations import run
 
-class DjangoUWSGIDeployment(BaseDeployment):
+class UWSGIDeployment(BaseDeployment):
     def init(self):
-        self.add_signal_handler("post-extract", self.__post_extract_handler)
-
+        self.add_signal_handler("finish", self.restart)
+            
     """
     Return tuple:
      (launcher-file, template-file)
@@ -20,9 +20,10 @@ class DjangoUWSGIDeployment(BaseDeployment):
             self.host() + ".ini",
             self.get_config_value('uwsgi/vassal_template')
         )
-
-    def __post_extract_handler(self):
-        #remove *.pyc files.
-        remove_pyc_files(self.project_path)
-        #restart uwsgi service.
+    
+    def restart(self):
+        if not self.fast:
+            #update the domains.
+            with cd(self.project_path):
+                run("echo \"%s\" > domains.txt" % "\n".join(self.hosts))
         restart_uwsgi(self)

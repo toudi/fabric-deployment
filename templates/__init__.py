@@ -1,3 +1,4 @@
+from fabric.context_managers import cd
 from fabric.contrib.files import exists
 from fabric.operations import run
 from fabric.api import env
@@ -84,10 +85,16 @@ class BaseDeployment(object):
         }
 
     def host(self):
-        pass
+        return self.get_config_value('project/host')
+    
+    @property
+    def hosts(self):
+        return [self.host()]
     
     def __send_payload(self):
         scp(self.payload, "/tmp")
+        if self.delete:
+            scp(self.delete, "/tmp")
         
     def __extract_payload(self):
         #First, check if the dest.path exists.
@@ -98,38 +105,7 @@ class BaseDeployment(object):
             "payload": self.payload,
             "project": self.project_path
         })
+        if self.delete:
+            with cd(self.project_path):
+                run("rm -f `cat /tmp/%s`" % self.delete)
         #done deal!
-
-class PythonDeployment(BaseDeployment):
-    def init(self):
-        self.add_signal_handler('post-extract', self.remove_pyc_files)
-
-    def remove_pyc_files(self):
-        from commands.python import remove_pyc_files
-        remove_pyc_files(self.project_path)
-
-class PylonsUwsgiDeployment(PythonDeployment):
-
-    def init(self):
-        super(PylonsUwsgiDeployment, self).init()
-        self.add_signal_handler('post-extract', self.post_extract_handler)
-
-    def post_extract_handler(self):
-        pass
-
-    def bootstrap(self, force=False):
-        from commands.python import virtualenv
-
-        uwsgi_dir = self.get_config_value('uwsgi/work_dir')
-        virtualenv_dir = self.get_config_value('virtualenv/path')
-        virtualenv_bin = self.get_config_value('virtualenv/bin')
-
-        vassals_dir = self.get_config_value('uwsgi/vassals_dir')
-
-        if not exists(virtualenv_dir) or force:
-            run("%s %s" % (virtualenv_bin, virtualenv_dir))
-            virtualenv(virtualenv_dir, "pip install uwsgi")
-
-        for p in (uwsgi_dir, vassals_dir):
-            if not exists(p) or force:
-                run('mkdir %s' % p)
