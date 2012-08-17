@@ -1,12 +1,25 @@
 from fabric.contrib.files import exists
 from fabric.operations import run
 from fabric.api import env
+import logging
+import os
+from stat import S_IRGRP, S_IMODE
+from commands import scp
+
 
 
 class BaseDeployment(object):
     def __init__(self, branch=None, fast=False):
         self.role = env.roles[0]
         for k, v in self.get_config_value('fabric').items():
+            if k == 'key_filename':
+                #Need to check if file permissions of identity file
+                #are 0600 - if not, ssh / scp will fail.
+                mod = os.stat(v).st_mode
+                if S_IMODE(mod) & S_IRGRP:
+                    logging.warn("Your identity file is too open. chmod'ing it to 0600.")
+                    os.chmod(v, 0600)
+                
             setattr(env, k, v)
         self.branch = branch
         self.fast = fast
@@ -23,8 +36,13 @@ class BaseDeployment(object):
 
     def run(self):
         self.scm.refresh_repo()
-        (payload, delete) = self.scm.prepare_payload()
-        self.emit_signal("pre-send-payload")
+        (self.payload, self.delete) = self.scm.prepare_payload()
+        if self.payload:
+            self.emit_signal("send-payload")
+            self.__send_payload()
+            self.emit_signal("pre-extract")
+            self.__extract_payload()
+            self.emit_signal("post-extract")
         self.emit_signal("finish")
 
     def get_config_value(self, value, default=None, local=True):
@@ -67,6 +85,20 @@ class BaseDeployment(object):
 
     def host(self):
         pass
+    
+    def __send_payload(self):
+        scp(self.payload, "/tmp")
+        
+    def __extract_payload(self):
+        #First, check if the dest.path exists.
+        if not exists(self.project_path):
+            run("mkdir -p %s" % self.project_path)
+        #proceed to extracting the payload.
+        run("tar -xzmf /tmp/%(payload)s -C %(project)s" % {
+            "payload": self.payload,
+            "project": self.project_path
+        })
+        #done deal!
 
 class PythonDeployment(BaseDeployment):
     def init(self):
