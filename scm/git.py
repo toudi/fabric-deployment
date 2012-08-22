@@ -60,16 +60,16 @@ class Backend:
  egrep '^D' | cut -f 2 > ../%s" % (sha1, self.removed_files_list))
                     else:
                         self.payload_file = None
-                #just in case enything goes berserk in the future
-                #we bail out to master branch, so future deploys
-                #could resume sanely.
-                local("git checkout master")
                 
                 if self.payload_file:
                     local("tar -czf ../%(payload)s -T ../payload" % {
                         'payload': self.payload_file
                     })
 
+                #just in case enything goes berserk in the future
+                #we bail out to master branch, so future deploys
+                #could resume sanely.
+                local("git checkout master")
                             
         return (self.payload_file, self.removed_files_list)
 
