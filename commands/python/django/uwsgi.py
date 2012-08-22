@@ -68,9 +68,9 @@ def start(deployment):
         #let's start main uwsgi instance.
             virtualenv(
                 deployment.get_config_value('virtualenv/path'),
-                "LANG=pl_PL.UTF-8 LC_ALL=pl_PL.UTF-8 uwsgi \
- --daemonize %(log)s --pidfile %(pid)s --fastrouter %(sock)s \
- --fastrouter-subscription-server 127.0.0.1:3032 --emperor %(vassals)s" % {
+                "LANG=pl_PL.UTF-8 LC_ALL=pl_PL.UTF-8 uwsgi --master \
+ --emperor %(vassals)s --daemonize %(log)s --pidfile %(pid)s --fastrouter %(sock)s \
+ --fastrouter-subscription-server 127.0.0.1:3032" % {
                     "log": uwsgi_dir + "/uwsgi.log",
                     "pid": uwsgi_dir + "/uwsgi.pid",
                     "vassals": vassals_dir,
