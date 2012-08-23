@@ -25,14 +25,14 @@ def bootstrap(force=False):
     deploy.bootstrap(force)
 
 
-def fastdeploy(branch=None):
+def fastdeploy(branch=None, fake=False):
     return deploy(branch, fast=True)
 
 
-def deploy(branch=None, fast=False):
+def deploy(branch=None, fast=False, fake=False,*args, **kwargs):
     try:
         from config import deployment
-        deploy = deployment(branch=branch, fast=fast)
+        deploy = deployment(branch=branch, fast=fast, fake=fake, *args, **kwargs)
         deploy.run()
     except ImportError:
         from traceback import print_exc
@@ -52,5 +52,10 @@ if __name__ == 'fabfile':
     fabric wouldn't be informed about any roledefs (this section is parsed
     before execution of functions)
     """
-    from config import deployment
-    deployment()
+    try:
+        from config import deployment
+        deployment()
+    except ImportError:
+        logging.error("Couldn't import deployment class from config module")
+        logging.error("Are you in the projects dir? Apparently not!")
+        logging.error(getcwd())

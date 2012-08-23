@@ -40,26 +40,27 @@ class Backend:
                 self.head = local("git checkout %(branch)s && git rev-parse HEAD" % {
                     'branch': self.branch,
                 }, capture=True)
-                self.payload_file = 'payload-%s.tar.gz' % self.head
-                if sha1.failed:
-                    #there was no last deployment info -> we need to deploy a full
-                    #tree of the code.
-                        local("git ls-files > ../payload" % {
-                            'branch': self.branch
-                        })
-                        local("tar -czf ../%(payload)s -T ../payload" % {
-                            'payload': self.payload_file
-                        })
-                else:
-                    if self.head != sha1:
-                        self.removed_files_list = "remove-files-%s" % self.head
-                    #we prepare the diff
-                        local("git diff --name-status --no-renames %s |\
- egrep '^(A|M)' | cut -f 2 > ../payload" % sha1)
-                        local("git diff --name-status --no-renames %s |\
- egrep '^D' | cut -f 2 > ../%s" % (sha1, self.removed_files_list))
+                if not self.deploy.fake:
+                    self.payload_file = 'payload-%s.tar.gz' % self.head
+                    if sha1.failed:
+                        #there was no last deployment info -> we need to deploy a full
+                        #tree of the code.
+                            local("git ls-files > ../payload" % {
+                                'branch': self.branch
+                            })
+                            local("tar -czf ../%(payload)s -T ../payload" % {
+                                'payload': self.payload_file
+                            })
                     else:
-                        self.payload_file = None
+                        if self.head != sha1:
+                            self.removed_files_list = "remove-files-%s" % self.head
+                        #we prepare the diff
+                            local("git diff --name-status --no-renames %s |\
+     egrep '^(A|M)' | cut -f 2 > ../payload" % sha1)
+                            local("git diff --name-status --no-renames %s |\
+     egrep '^D' | cut -f 2 > ../%s" % (sha1, self.removed_files_list))
+                        else:
+                            self.payload_file = None
                 
                 if self.payload_file:
                     local("tar -czf ../%(payload)s -T ../payload" % {
@@ -81,6 +82,8 @@ class Backend:
                 'remove': self.removed_files_list
             })
             run("rm -f /tmp/" + self.payload_file)
+            
+        if self.payload_file or self.deploy.fake:
             run("echo %(head)s > %(project)s/.last-deployment" % {
                 "head": self.head,
                 "project": self.deploy.project_path

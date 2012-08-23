@@ -10,7 +10,7 @@ from commands import scp
 
 
 class BaseDeployment(object):
-    def __init__(self, branch=None, fast=False):
+    def __init__(self, branch=None, fast=False, fake=False, *args, **kwargs):
         self.role = env.roles[0]
         for k, v in self.get_config_value('fabric').items():
             if k == 'key_filename':
@@ -24,8 +24,13 @@ class BaseDeployment(object):
             setattr(env, k, v)
         self.branch = branch
         self.fast = fast
+        self.fake = fake
         self.__scm = None
         self.__signal_handlers = {}
+        self.params = {
+            "args": args,
+            "kwargs": kwargs
+        }
         self.init()
 
     def init(self):
