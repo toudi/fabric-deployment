@@ -1,9 +1,9 @@
 # -*- coding: utf-8 *-*
-from templates import BaseDeployment
+from templates.python.uwsgi import UWSGIDeployment
 from commands.python import remove_pyc_files
 from commands.python.django.uwsgi import restart as restart_uwsgi
 
-class DjangoUWSGIDeployment(BaseDeployment):
+class DjangoUWSGIDeployment(UWSGIDeployment):
     def init(self):
         self.add_signal_handler("post-extract", self.__post_extract_handler)
 

@@ -34,7 +34,7 @@ class UWSGIDeployment(BaseDeployment):
         vassals_dir = self.get_config_value('uwsgi/vassals_dir')
         uwsgi_dir = self.get_config_value('uwsgi/workdir')
         virtualenv_dir = self.get_config_value('virtualenv/path')
-        virtualenv_bin = self.get_config_value('virtualenv/bin')
+        virtualenv_bin = self.get_config_value('virtualenv/bin', 'virtualenv')
 
         if not exists(virtualenv_dir) or force:
             run("%s %s" % (virtualenv_bin, virtualenv_dir))

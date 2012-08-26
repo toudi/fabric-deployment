@@ -36,7 +36,7 @@ class BaseDeployment(object):
     def init(self):
         pass
 
-    def bootstrap(self):
+    def bootstrap(self, force=False):
         pass
 
 

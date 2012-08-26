@@ -22,7 +22,7 @@ def is_running(deployment):
 
 def restart(deployment):
     #we need to check whether uwsgi is started in emperor mode or not.
-    emperor = deployment.get_config_value('uwsgi/emperor', False)
+    emperor = deployment.get_config_value('uwsgi/emperor', True)
     vassals_dir = deployment.get_config_value('uwsgi/vassals_dir')
     #then, check if the master instance of uwsgi exists. If not, there's no
     #need to restart, as it will pick up vassal automatically.
@@ -46,7 +46,7 @@ def restart(deployment):
 
 def start(deployment):
     #we need to check whether uwsgi is started in emperor mode or not.
-    emperor = deployment.get_config_value('uwsgi/emperor', False)
+    emperor = deployment.get_config_value('uwsgi/emperor', True)
     uwsgi_dir = deployment.get_config_value('uwsgi/workdir')
     
     vassal = deployment.vassal
@@ -94,7 +94,7 @@ def start(deployment):
 
 def stop(deployment):
     #we need to check whether uwsgi is started in emperor mode or not.
-    emperor = deployment.get_config_value('uwsgi/emperor', False)
+    emperor = deployment.get_config_value('uwsgi/emperor', True)
     vassal = deployment.vassal
     if emperor:
         #in emperor mode, we remove the config file.
