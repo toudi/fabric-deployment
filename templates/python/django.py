@@ -5,6 +5,7 @@ from commands.python.django.uwsgi import restart as restart_uwsgi
 
 class DjangoUWSGIDeployment(UWSGIDeployment):
     def init(self):
+        super(DjangoUWSGIDeployment, self).init()
         self.add_signal_handler("post-extract", self.__post_extract_handler)
 
     def __post_extract_handler(self):

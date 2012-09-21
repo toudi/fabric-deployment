@@ -37,6 +37,7 @@ class Backend:
             })
             with lcd("repo"):
                 local("git checkout %s" % self.branch)
+                local("git pull")
                 self.head = local("git checkout %(branch)s && git rev-parse HEAD" % {
                     'branch': self.branch,
                 }, capture=True)
