@@ -106,11 +106,12 @@ class BaseDeployment(object):
         if not exists(self.project_path):
             run("mkdir -p %s" % self.project_path)
         #proceed to extracting the payload.
-        run("tar -xzmf /tmp/%(payload)s -C %(project)s" % {
+        run("tar -xzmf /tmp/%(payload)s -C %(project)s && rm -f /tmp/%(payload)s" % {
             "payload": self.payload,
             "project": self.project_path
         })
+
         if self.delete:
             with cd(self.project_path):
-                run("rm -f `cat /tmp/%s`" % self.delete)
+                run("rm -f `cat /tmp/%(del)s` && rm -f /tmp/%(del)s" % {'del': self.delete})
         #done deal!

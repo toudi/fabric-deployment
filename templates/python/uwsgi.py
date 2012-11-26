@@ -33,7 +33,7 @@ class UWSGIDeployment(BaseDeployment):
     def bootstrap(self, force=False):
         vassals_dir = self.get_config_value('uwsgi/vassals_dir')
         uwsgi_dir = self.get_config_value('uwsgi/workdir')
-        virtualenv_dir = self.get_config_value('virtualenv/path')
+        virtualenv_dir = self.get_config_value('uwsgi/env')
         virtualenv_bin = self.get_config_value('virtualenv/bin', 'virtualenv')
 
         if not exists(virtualenv_dir) or force:

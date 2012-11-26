@@ -2,9 +2,9 @@ from fabric.api import env
 import logging
 import sys
 from os import getcwd
-for path in ('', '../../'):
-    if not getcwd() + '/' + path in sys.path:
-        sys.path.insert(1, getcwd() + '/' + path)
+from os.path import realpath, dirname
+
+sys.path.insert(1, dirname(realpath(__file__)))
 
 def run(command, *args, **kwargs):
     try:
@@ -56,6 +56,11 @@ if __name__ == 'fabfile':
         from config import deployment
         deployment()
     except ImportError:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        from traceback import print_tb, print_stack, print_exc
+        print_tb(exc_traceback)
+        print_stack()
+        print_exc()
         logging.error("Couldn't import deployment class from config module")
         logging.error("Are you in the projects dir? Apparently not!")
         logging.error(getcwd())
