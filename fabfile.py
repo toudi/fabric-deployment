@@ -4,7 +4,15 @@ import sys
 from os import getcwd
 from os.path import realpath, dirname
 
-sys.path.insert(1, dirname(realpath(__file__)))
+
+#fabfile.pyc is created in this directory even if we symlink the py file
+#therefore we need to specifile fabfile.py manually
+modname = __file__
+if modname.endswith('pyc'):
+    modname = modname[:-1]
+
+sys.path.insert(1, dirname(realpath(modname)))
+
 
 def run(command, *args, **kwargs):
     try:
