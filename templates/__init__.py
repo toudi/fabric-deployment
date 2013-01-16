@@ -1,6 +1,6 @@
 from fabric.context_managers import cd
 from fabric.contrib.files import exists
-from fabric.operations import run
+from fabric.operations import run, local
 from fabric.api import env
 import logging
 import os
@@ -41,14 +41,7 @@ class BaseDeployment(object):
 
 
     def run(self):
-        self.scm.refresh_repo()
-        (self.payload, self.delete) = self.scm.prepare_payload()
-        if self.payload:
-            self.emit_signal("send-payload")
-            self.__send_payload()
-            self.emit_signal("pre-extract")
-            self.__extract_payload()
-            self.emit_signal("post-extract")
+        self.scm.synchronize()
         self.emit_signal("finish")
 
     def get_config_value(self, value, default=None, local=True):
@@ -96,7 +89,19 @@ class BaseDeployment(object):
     def hosts(self):
         return [self.host()]
     
+    def synchronize(self, payload, delete):
+        if payload:
+            self.payload = payload
+            self.delete = delete
+
+            self.emit_signal("send-payload")
+            self.__send_payload()
+            self.emit_signal("pre-extract")
+            self.__extract_payload()
+            self.emit_signal("post-extract")
+
     def __send_payload(self):
+        """Fallback method for synchronization."""
         scp(self.payload, "/tmp")
         if self.delete:
             scp(self.delete, "/tmp")
