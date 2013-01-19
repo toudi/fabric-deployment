@@ -6,6 +6,7 @@ import logging
 import os
 from stat import S_IRGRP, S_IMODE
 from commands import scp
+import sys
 
 
 
@@ -14,6 +15,9 @@ class BaseDeployment(object):
         self.role = env.roles[0]
         for k, v in self.get_config_value('fabric').items():
             if k == 'key_filename':
+                if v.startswith('.'):
+                    foo = __import__(self.__module__)
+                    v = "%s/%s" % (os.path.dirname(foo.__file__), v)
                 #Need to check if file permissions of identity file
                 #are 0600 - if not, ssh / scp will fail.
                 mod = os.stat(v).st_mode
