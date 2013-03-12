@@ -2,6 +2,7 @@
 from fabric.api import env
 from fabric.operations import local, run
 from fabric.context_managers import lcd, settings
+from fabric.contrib.files import exists as rexists
 from os.path import exists
 from hashlib import md5
 from commands import rsync
@@ -26,6 +27,9 @@ class Backend:
 
     def synchronize(self):
         self.refresh_repo()
+
+        if not rexists(self.deploy.project_path):
+            run('mkdir -p %s' % self.deploy.project_path)
         if self.use_rsync:
             self.deploy.emit_signal('send-payload')
             self.deploy.emit_signal('pre-extract')
