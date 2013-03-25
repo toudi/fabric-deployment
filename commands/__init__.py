@@ -1,5 +1,5 @@
 from fabric.operations import local
-from fabric.api import env
+from fabric.api import env, settings, run
 
 
 def scp(local_file, remote_file):
@@ -36,3 +36,7 @@ def rsync(local_dir, remote_dir, options={}):
         local_dir,
         remote_dir)
     )
+
+def is_link(path):
+    with settings(warn_only=True):
+        return run('[ -L "%s" ]' % path).succeeded

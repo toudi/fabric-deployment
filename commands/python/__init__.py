@@ -22,4 +22,4 @@ def virtualenv(ve_path, command, use_sudo=False, cd_path=None):
 
 def remove_pyc_files(path):
     with cd(path):
-        run("find . -name '*.pyc' -exec rm -v {} \;")
+        run("find . -name '*.pyc' -delete")
