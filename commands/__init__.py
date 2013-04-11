@@ -37,6 +37,29 @@ def rsync(local_dir, remote_dir, options={}):
         remote_dir)
     )
 
+
 def is_link(path):
     with settings(warn_only=True):
         return run('[ -L "%s" ]' % path).succeeded
+
+
+def sed_replace(replace_dict, path, search_wrapper='__%s__'):
+    """
+    Executes sed in 'edit-in-place' mode, replacing all of `search`
+    occurences with `replace`.
+    You need to pass `replace_dict` as a dict, where keys are searches
+    and values are replacements.
+    """
+    replace_tmpl = "s/%(search)s/%(replace)s/g;"
+    sed_cmd      = "sed -i -e'%s' %s"
+
+    r = []
+
+    for search, replace in replace_dict.items():
+        r.append(replace_tmpl % {
+            'search': search_wrapper % search,
+            'replace': replace
+        })
+
+    run(sed_cmd % (''.join(r), path))
+    del r
