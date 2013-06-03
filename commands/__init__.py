@@ -1,29 +1,40 @@
 from fabric.operations import local
 from fabric.api import env, settings, run
 
+CMD_AGENT   = "scp -P %(port)s %(local_file)s %(user)s@%(host)s:%(remote_file)s"
+CMD_NOAGENT = "scp -P %(port)s -i %(ident)s %(local_file)s %(user)s@%(host)s:%(remote_file)s"
 
 def scp(local_file, remote_file):
-    return local("scp -P %(port)s -i %(ident)s %(local_file)s %(user)s@%(host)s:%(remote_file)s" % (
-        {
-            "port": env.port,
-            "ident": env.key_filename,
-            "local_file": local_file,
-            "user": env.user,
-            "host": env.host,
-            "remote_file": remote_file
-        }
-    ))
+    args = {
+        "port": env.port,
+        "local_file": local_file,
+        "user": env.user,
+        "host": env.host,
+        "remote_file": remote_file
+    }
 
+    cmd = CMD_AGENT
+
+    if not env.forward_agent:
+        cmd = CMD_NOAGENT
+        args['ident'] = env.key_filename
+
+    return local(cmd % args)
+
+RSYNC_SSH_NOAGENT = "ssh -p %(port)s -i %(ident)s"
+RSYNC_SSH_AGENT   = "ssh -A -p %(port)s"
 
 def rsync(local_dir, remote_dir, options={}):
     options.update({'-aurz': True})
 
-    options["-e"] = "ssh"
-    if hasattr(env, 'key_filename'):
-        options["-e"] = 'ssh -p %s -i %s' % (
-            env.port,
-            env.key_filename
-        )
+    ssh_args = {'port': env.port}
+    ssh_cmd  = RSYNC_SSH_AGENT
+
+    if hasattr(env, 'key_filename') and not env.forward_agent:
+        ssh_cmd = RSYNC_SSH_NOAGENT
+        ssh_args['ident'] = env.key_filename
+
+    options["-e"] = ssh_cmd % ssh_args
 
     rsync_options = []
     for switch, value in options.items():

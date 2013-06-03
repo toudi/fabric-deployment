@@ -15,15 +15,18 @@ class BaseDeployment(object):
         self.role = env.roles[0]
         for k, v in self.get_config_value('fabric').items():
             if k == 'key_filename':
-                if v.startswith('.'):
-                    foo = __import__(self.__module__)
-                    v = "%s/%s" % (os.path.dirname(foo.__file__), v)
-                #Need to check if file permissions of identity file
-                #are 0600 - if not, ssh / scp will fail.
-                mod = os.stat(v).st_mode
-                if S_IMODE(mod) & S_IRGRP:
-                    logging.warn("Your identity file is too open. chmod'ing it to 0600.")
-                    os.chmod(v, 0600)
+                if not self.get_config_value('fabric/forward_agent', False):
+                    if v.startswith('.'):
+                        foo = __import__(self.__module__)
+                        v = "%s/%s" % (os.path.dirname(foo.__file__), v)
+                    #Need to check if file permissions of identity file
+                    #are 0600 - if not, ssh / scp will fail.
+                    mod = os.stat(v).st_mode
+                    if S_IMODE(mod) & S_IRGRP:
+                        logging.warn("Your identity file is too open. chmod'ing it to 0600.")
+                        os.chmod(v, 0600)
+                else:
+                    continue
                 
             setattr(env, k, v)
         self.branch = branch
@@ -56,8 +59,11 @@ class BaseDeployment(object):
                 tmp_val = tmp_val[key]
             except KeyError:
                 return default
-        if local and type(tmp_val) == dict and self.role in tmp_val:
-            return tmp_val[self.role]
+        if local and type(tmp_val) == dict and (self.role or 'default' in tmp_val):
+            try:
+                return tmp_val[self.role]
+            except KeyError:
+                return tmp_val.get('default', tmp_val)
         return tmp_val
 
     def add_signal_handler(self, signal, handler):
@@ -82,9 +88,14 @@ class BaseDeployment(object):
 
     @property
     def project_path(self):
-        return self.get_config_value('project/destpath') % {
-            'host': self.host()
-        }
+        tmpl = self.get_config_value('project/destpath')
+        try:
+            return tmpl % {
+                'host': self.host()
+            }
+        except TypeError:
+            # the host doesn't have branch placeholder
+            return tmpl
 
     def host(self):
         return self.get_config_value('project/host')
