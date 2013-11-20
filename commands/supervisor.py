@@ -13,14 +13,20 @@ def run_or_sudo(cmd, use_sudo):
     else:
         run(cmd)
 
+def restart(name, cfg=None, use_sudo=False):
+    run_or_sudo(SUPERVISORCTL_COMMAND("restart %s" % name, cfg), use_sudo)
+
+def start(name, cfg=None, use_sudo=False):
+    run_or_sudo(SUPERVISORCTL_COMMAND("start %s" % name, cfg), use_sudo)
+
+def stop(name, cfg=None, use_sudo=False):
+    run_or_sudo(SUPERVISORCTL_COMMAND("stop %s" % name, cfg), use_sudo)
 
 def stop_group(group, cfg=None, use_sudo=False):
-    run_or_sudo(SUPERVISORCTL_COMMAND("stop %s:*" % group, cfg), use_sudo)
-
+    stop("%s:*" % group, cfg, use_sudo)
 
 def start_group(group, cfg=None, use_sudo=False):
-    run_or_sudo(SUPERVISORCTL_COMMAND("start %s:*" % group, cfg), use_sudo)
-
+    start("%s:*" % group, cfg, use_sudo)
 
 def reload_cfg(cfg=None, use_sudo=False):
-    run_or_sudo(SUPERVISORCTL_COMMAND("reread", cfg), use_sudo)
+    run_or_sudo(SUPERVISORCTL_COMMAND("update", cfg), use_sudo)

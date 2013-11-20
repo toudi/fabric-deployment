@@ -1,0 +1,4 @@
+TODO:
+- introduce config inheritance.
+  If you have multiple projects, reusing supervisor paths or uwsgi paths, it doesn't make any sense to copy&paste all of the config data, it should be easily extendable.
+  probably use configparser .. ?
