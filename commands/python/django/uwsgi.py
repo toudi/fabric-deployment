@@ -34,7 +34,9 @@ def restart(deployment):
                 start(deployment)
                 return
             if exists(deployment.vassal[0]):
-                run("touch %s" % deployment.vassal[0])
+                run("kill -HUP `cat %s/uwsgi.pid`" %
+                    deployment.get_config_value('uwsgi/workdir')
+                    )
             else:
                 scp(
                     deployment.get_config_value('uwsgi/launcher'),
