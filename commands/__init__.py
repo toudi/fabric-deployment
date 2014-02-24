@@ -1,5 +1,6 @@
 from fabric.operations import local
 from fabric.api import env, settings, run
+import os.path
 
 CMD_AGENT   = "scp -P %(port)s %(local_file)s %(user)s@%(host)s:%(remote_file)s"
 CMD_NOAGENT = "scp -P %(port)s -i %(ident)s %(local_file)s %(user)s@%(host)s:%(remote_file)s"
@@ -12,6 +13,9 @@ def scp(local_file, remote_file):
         "host": env.host,
         "remote_file": remote_file
     }
+
+    if os.path.isdir(local_file):
+        args['local_file'] = '-r %s' % local_file
 
     cmd = CMD_AGENT
 
@@ -52,7 +56,6 @@ def rsync(local_dir, remote_dir, options={}):
 def is_link(path):
     with settings(warn_only=True):
         return run('[ -L "%s" ]' % path).succeeded
-
 
 def sed_replace(replace_dict, path, search_wrapper='__%s__', auto_escape=True):
     """
